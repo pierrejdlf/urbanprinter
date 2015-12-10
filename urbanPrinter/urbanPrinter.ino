@@ -26,8 +26,9 @@ LiquidCrystal lcd(9, 8, 7, 6, 5, 4);
 // and schema
 
 ///////////////////////////////////////////////////
+//B00011111, B00000101, B00000101, B00000101, B00011111 };
 byte a[5] = { 
-  B00011111, B00000101, B00000101, B00000101, B00011111 };
+  B00011111, B00011111, B00011111, B00011111, B00011111 };
 byte b[5] = { 
   B00011111, B00010100, B00010100, B00010100, B00011100 };
 byte c[5] = { 
@@ -137,7 +138,7 @@ void loop() {
   boolean go = (digitalRead(TRIGGER)==LOW);
 
   //// keyboard char receive loop
-  if(config && keyboard.available()) {
+  if(keyboard.available()) {
     // read the next key
     char c = keyboard.read();
     receiveChar(c);
@@ -156,15 +157,16 @@ void receiveChar(char ch) {
 
   int charint = (int)ch;
   if(charint>=97 && charint <=122) { // ALPHABET !!
-    addCharToMemory(ch);
+    if(config) addCharToMemory(ch);
   }
   if(charint==32) { // SPACE
-    addCharToMemory(ch);
+    if(config) addCharToMemory(ch);
   }
   if(ch==PS2_TAB) { // TAB
     // ?
   }
   if(ch==PS2_BACKSPACE) { // ERASOR
+    closeVannes();
     lcd.clear();
     config = true;
     memset(sentenceSet, 0, sizeof(sentenceSet));
@@ -178,8 +180,8 @@ void receiveChar(char ch) {
     lcd.print("ETAT d'URGENCE");
     lcd.setCursor(0,1);
     lcd.print(sentenceSet);
-    startPrinting(sentenceSet, charP);
     config = false;
+    startPrinting(sentenceSet, charP);
     charP = 0;
   }
 }
@@ -198,14 +200,27 @@ void startPrinting(char* sent, int l) {
   for(int i=0; i<l; i=i+1) {
     printLetter(sent[i]);
     waitLetter();
-  }  
+  }
+  closeVannes();
+  lcdPrint("Pole emploi.");
 }
 
+void closeVannes() {
+   for(int dot=0; dot<5; dot=dot+1) {
+    digitalWrite(PRINTPIN[dot], LOW);
+  }
+}
+
+void lcdPrint(String str) {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(str);
+}
 void waitLine() { // between lines
-  delay(5000);
+  delay(500);
 }
 void waitLetter() { // between letters
-  delay(10000);
+  delay(2000);
 }
 void printLetter(char c) {
   Serial.print("print letter: ");
@@ -216,25 +231,26 @@ void printLetter(char c) {
 
   // for each line
   for(int vert=0; vert<5; vert=vert+1) {
-    // for each dot
-    Serial.println("vertically");
-    for(int dot=0; dot<5; dot=dot+1) {
-      //charint is from keyboard
-      //boolean on = alph[charint-97];
-      boolean on = charlist[vert] & (1 << dot);
-      Serial.println(on ? "X" : "O");
-      if(on) {
-        digitalWrite(PRINTPIN[dot], HIGH);
-      } 
-      else 
-        digitalWrite(PRINTPIN[dot], LOW);
+    lcdPrint((String)vert);
+    if(!config) {
+      // for each dot
+      Serial.println("vertically");
+      for(int dot=0; dot<5; dot=dot+1) {
+        //charint is from keyboard
+        //boolean on = alph[charint-97];
+        boolean on = charlist[vert] & (1 << dot);
+        Serial.println(on ? "X" : "O");
+        if(on) {
+          digitalWrite(PRINTPIN[dot], HIGH);
+        } 
+        else 
+          digitalWrite(PRINTPIN[dot], LOW);
+      }
+      waitLine();
     }
-    waitLine();
   }
   // at the end of the letter close all ? maybe not
-  for(int dot=0; dot<5; dot=dot+1) {
-    digitalWrite(PRINTPIN[dot], LOW);
-  }
+  closeVannes();
 }
 
 
