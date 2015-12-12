@@ -3,6 +3,10 @@
 #include <PS2Keyboard.h>
 #include <LiquidCrystal.h>
 
+#define WAITDOT 500
+#define WAITLETTER 800
+#define WAITSPACE 1200
+
 // PS2 Keyboard
 #define KCLOCK 2
 #define KDATA 3
@@ -56,18 +60,12 @@ const byte x[5] = { B00010001, B00001010, B00000100, B00001010, B00010001 };
 const byte y[5] = { B00000111, B00000100, B00010100, B00010100, B00011111 };
 const byte z[5] = { B00010001, B00001000, B00000100, B00000010, B00010001 };
 
-const byte* alph[26] = { a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z };
+const byte space[5] = {B00000000, B00000000, B00000000, B00000000, B00000000}; //26
+const byte plain[5] = {B11111111, B11111111, B11111111, B11111111, B11111111}; //27
+const byte grid[5] = {B10101010, B01010101, B10101010, B01010101, B10101010}; //28
 
-byte erasor[5] = {
-  B11111111, B11111111, B11111111, B11111111, B11111111
-};
-byte grid[5] = {
-  B10101010, B01010101, B10101010, B01010101, B10101010
-};
+const byte* alph[29] = { a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, space, plain, grid };
 
-const byte* spec[2] = {
-  erasor, grid
-};
 ///////////////////////////////////////////////////
 boolean config = true;
 char sentenceHard[] = "ab";
@@ -103,36 +101,39 @@ void setup() {
 }
 
 boolean debug = true;
-int loup = 0;
-
+int debugstyle = 0;
+boolean debugstyleset = false;
 void loop() {
 
   delay(10);
 
+  ////////// LCD feedback !
+  lcd.setCursor(13,0);
+  if(debug) {
+    lcd.print("DB");
+  } else {
+    lcd.print("GO");
+  }
+  if(config) lcd.print("?");
+
+  ////////// simple motifs to test !
   if(debug) {
     if(shouldgo()) {
-      Serial.println("GOTEST");
-      if((loup%2)==0) {
-        analogWrite(PRINTPIN[0], 255);
-        analogWrite(PRINTPIN[1], 0);
-        analogWrite(PRINTPIN[2], 255);
-        analogWrite(PRINTPIN[3], 0);
-        analogWrite(PRINTPIN[4], 255);
-      } else {
-        analogWrite(PRINTPIN[0], 0);
-        analogWrite(PRINTPIN[1], 255);
-        analogWrite(PRINTPIN[2], 0);
-        analogWrite(PRINTPIN[3], 255);
-        analogWrite(PRINTPIN[4], 0);
-      }
+      //Serial.println("GOTEST");
+      lcd.setCursor(0,1);
+      if((debugstyle%3)==0) printVerticalPixels(B0010101);
+      if((debugstyle%3)==1) printVerticalPixels(B0001010);
+      if((debugstyle%3)==2) printVerticalPixels(B0011011);
+      debugstyleset = false;
     } else {
       closeVannes();
-      loup = loup+1;
+      if(!debugstyleset) debugstyle = debugstyle+1;
+      debugstyleset = true;
     }
     
   }
   
-  //// keyboard char receive loop
+  ////////// keyboard char receive loop
   if (keyboard.available()) {
     // read the next key
     char c = keyboard.read();
@@ -143,6 +144,12 @@ void loop() {
 boolean shouldgo() {
   return (digitalRead(TRIGGER) == LOW);
 }
+boolean sleepIfNotGo() {
+  while(!shouldgo()) {
+    closeVannes();
+    delay(10);
+  }
+}
 
 void addCharToMemory(char ch) {
   sentenceSet[charP] = ch;
@@ -152,9 +159,9 @@ void addCharToMemory(char ch) {
   lcd.print(sentenceSet);
 }
 void receiveChar(char ch) {
-  //Serial.println(ch);
 
   int charint = (int)ch;
+  Serial.println(charint);
   if (charint >= 97 && charint <= 122) { // ALPHABET !!
     if (config) addCharToMemory(ch);
   }
@@ -163,6 +170,9 @@ void receiveChar(char ch) {
   }
   if (ch == PS2_TAB) { // TAB
     // ?
+  }
+  if (charint == 61) { // "="
+    debug = !debug;
   }
   if (ch == PS2_BACKSPACE) { // ERASOR
     closeVannes();
@@ -177,8 +187,6 @@ void receiveChar(char ch) {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("ETAT d'URGENCE");
-    lcd.setCursor(0, 1);
-    lcd.print(sentenceSet);
     config = false;
     startPrinting(sentenceSet, charP);
     charP = 0;
@@ -216,53 +224,60 @@ void lcdPrint(String str) {
   lcd.print(str);
 }
 void waitLine() { // between lines
-  delay(500);
+  delay(WAITDOT);
 }
 void waitLetter() { // between letters
-  delay(2000);
+  delay(WAITLETTER);
 }
 void printLetter(char c) {
   //Serial.print("print letter: ");
   //Serial.println(c);
   int w = (int)c - 97;
-  Serial.println(w);
+  
+  //Serial.println("Char index:");
+  //Serial.println(w);
+  
+  if(c==32) w = 26; //space
+  
+  //Serial.println(w);
   const byte *charlist = alph[w];
-  lcd.setCursor(15,0);
+  lcd.setCursor(0,1);
   lcd.print(String(c));
   
-  // for each line
+  // for each vertical line of pixels
   for (int vert = 0; vert < 5; vert = vert + 1) {
 
     //lcd.setCursor(15,0);
-    lcd.setCursor(0,1);
+    lcd.setCursor(2,1);
     lcd.print(String(vert));
     lcd.print(" ");
-    if (!config) {
-      // for each dot
-      
-      for (int pix = 0; pix < 5; pix = pix + 1) {
-        
-        boolean on = charlist[vert] & (1 << pix);
-        
-        //Serial.println(on ? "X" : "O");
 
-        if(on>0) {
-          analogWrite(PRINTPIN[pix], 255);
-          lcd.print("X");
-        }
-        else {
-          analogWrite(PRINTPIN[pix], 0);
-          lcd.print("_");
-        }
-      }
+    // if not triggerred, while-wait-sleep !
+    sleepIfNotGo();
+      
+    if (!config) {
+      printVerticalPixels( charlist[vert] );
       waitLine();
     }
   }
-  // at the end of the letter close all ? maybe not
+  // at the end of the letter close all ? maybe not ?
   closeVannes();
 }
 
-
+void printVerticalPixels(byte motif) {
+  // for each dot
+  for (int pix = 0; pix < 5; pix = pix + 1) {
+    boolean on = motif & (1 << pix);
+    //Serial.println(on ? "X" : "O");
+    if(on>0) {
+      analogWrite(PRINTPIN[pix], 255);
+      lcd.print("X");
+    } else {
+      analogWrite(PRINTPIN[pix], 0);
+      lcd.print("_");
+    }
+  }
+}
 
 
 
