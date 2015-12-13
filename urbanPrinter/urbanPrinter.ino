@@ -3,9 +3,9 @@
 #include <PS2Keyboard.h>
 #include <LiquidCrystal.h>
 
-#define WAITDOT 500
-#define WAITLETTER 800
-#define WAITSPACE 1200
+#define WAITDOT 200 // 350 // 500
+#define WAITLETTER 500
+#define WAITSPACE 900
 
 // PS2 Keyboard
 #define KCLOCK 2
@@ -121,9 +121,9 @@ void loop() {
     if(shouldgo()) {
       //Serial.println("GOTEST");
       lcd.setCursor(0,1);
-      if((debugstyle%3)==0) printVerticalPixels(B0010101);
+      if((debugstyle%3)==0) printVerticalPixels(B0011111);
       if((debugstyle%3)==1) printVerticalPixels(B0001010);
-      if((debugstyle%3)==2) printVerticalPixels(B0011011);
+      if((debugstyle%3)==2) printVerticalPixels(B0010101);
       debugstyleset = false;
     } else {
       closeVannes();
@@ -278,7 +278,6 @@ void printVerticalPixels(byte motif) {
     }
   }
 }
-
 
 
 
