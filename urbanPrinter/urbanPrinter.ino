@@ -3,9 +3,9 @@
 #include <PS2Keyboard.h>
 #include <LiquidCrystal.h>
 
-#define WAITDOT 500
-#define WAITLETTER 800
-#define WAITSPACE 1200
+#define WAITDOT 100 // 350 // 500
+#define WAITLETTER 400
+#define WAITSPACE 800
 
 // PS2 Keyboard
 #define KCLOCK 2
@@ -13,11 +13,11 @@
 PS2Keyboard keyboard;
 
 // PRINTER pins
-#define DOT0 A0
-#define DOT1 A1
+#define DOT4 A0
+#define DOT3 A1
 #define DOT2 A2
-#define DOT3 A3
-#define DOT4 A4
+#define DOT1 A3
+#define DOT0 A4
 
 // I killed A2,A3,A4 ... lack of light ! (on the mini board)
 
@@ -71,6 +71,7 @@ boolean config = true;
 char sentenceHard[] = "ab";
 char sentenceSet[99];
 int charP = 0;
+byte digits = B11111111;
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -105,7 +106,7 @@ int debugstyle = 0;
 boolean debugstyleset = false;
 void loop() {
 
-  delay(10);
+  delay(5);
 
   ////////// LCD feedback !
   lcd.setCursor(13,0);
@@ -121,13 +122,15 @@ void loop() {
     if(shouldgo()) {
       //Serial.println("GOTEST");
       lcd.setCursor(0,1);
-      if((debugstyle%3)==0) printVerticalPixels(B0010101);
-      if((debugstyle%3)==1) printVerticalPixels(B0001010);
-      if((debugstyle%3)==2) printVerticalPixels(B0011011);
+      printVerticalPixels(digits);
       debugstyleset = false;
     } else {
       closeVannes();
-      if(!debugstyleset) debugstyle = debugstyle+1;
+      if(!debugstyleset) {
+        debugstyle = debugstyle+1;
+        // set to next pattern ?
+        //setDigit()
+      }
       debugstyleset = true;
     }
     
@@ -140,6 +143,23 @@ void loop() {
     receiveChar(c);
   }
 }
+void setDigit(int dig) {
+  if(dig==0) 
+    digits = B00000000;
+  else {
+    if(dig<6)
+      digits = digits ^ (1 << (dig-1)); // toggle the digit // (1 << (dig-1)); 
+    if(dig==6)
+      digits = B00010101;
+    if(dig==7)
+      digits = B00000100;
+    if(dig==8)
+      digits = B00010001;
+    if(dig==9)
+      digits = B00011111;
+  }
+  Serial.println(digits,BIN);
+};
 
 boolean shouldgo() {
   return (digitalRead(TRIGGER) == LOW);
@@ -162,6 +182,10 @@ void receiveChar(char ch) {
 
   int charint = (int)ch;
   Serial.println(charint);
+  if (charint >= 48 && charint <= 57) { // DIGITS !!
+    int digit = charint - 48;
+    if (config) setDigit(digit);
+  }
   if (charint >= 97 && charint <= 122) { // ALPHABET !!
     if (config) addCharToMemory(ch);
   }
