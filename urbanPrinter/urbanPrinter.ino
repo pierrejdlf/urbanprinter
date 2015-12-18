@@ -122,7 +122,9 @@ void loop() {
     if(shouldgo()) {
       //Serial.println("GOTEST");
       lcd.setCursor(0,1);
+
       printVerticalPixels(digits);
+
       debugstyleset = false;
     } else {
       closeVannes();
@@ -302,7 +304,6 @@ void printVerticalPixels(byte motif) {
     }
   }
 }
-
 
 
 
