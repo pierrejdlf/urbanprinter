@@ -3,19 +3,29 @@
 #include <PS2Keyboard.h>
 #include <LiquidCrystal.h>
 
+#define WAITDOT 100 // 350 // 500
+#define WAITLETTER 400
+#define WAITSPACE 800
+
+int nSentences = 19;
+char* sentenceHard[19] = {
+
+};
+int choosen = 0;
+
 // PS2 Keyboard
 #define KCLOCK 2
 #define KDATA 3
 PS2Keyboard keyboard;
 
 // PRINTER pins
-#define DOT0 A0
-#define DOT1 A1
-#define DOT2 10
-#define DOT3 11
-#define DOT4 A5
+#define DOT4 A0
+#define DOT3 A1
+#define DOT2 A2
+#define DOT1 A3
+#define DOT0 A4
 
-// I killed A2,A3,A4 !
+// I killed A2,A3,A4 ... lack of light ! (on the mini board)
 
 int PRINTPIN[] = {
   DOT0, DOT1, DOT2, DOT3, DOT4
@@ -29,67 +39,74 @@ LiquidCrystal lcd(9, 8, 7, 6, 5, 4);
 // and schema
 
 ///////////////////////////////////////////////////
-//B00011111, B00000101, B00000101, B00000101, B00011111 };
-byte a[5] = { B00011111, B00001001, B00001001, B00001001, B00011111 };
-byte b[5] = { B00011111, B00010100, B00010100, B00010100, B00011100 };
-byte c[5] = { B00011111, B00010001, B00010001, B00010001, B00010001 };
-byte d[5] = { B00011100, B00010100, B00010100, B00010100, B00011111 };
-byte e[5] = { B00011111, B00010101, B00010101, B00010101, B00010001 };
-byte f[5] = { B00011111, B00000101, B00000101, B00000101, B00000001 };
-byte g[5] = { B00011111, B00010001, B00010001, B00010101, B00011101 };
-byte h[5] = { B00011111, B00000100, B00000100, B00000100, B00011111 };
-byte i[5] = { B00010001, B00010001, B00011111, B00010001, B00010001 };
-byte j[5] = { B00010000, B00010000, B00010001, B00011111, B00010001 };
-byte k[5] = { B00011111, B00000100, B00001110, B00011011, B00010001 };
-byte l[5] = { B00011111, B00010000, B00010000, B00010000, B00010000 };
-byte m[5] = { B00011111, B00000011, B00001100, B00000011, B00011111 };
-byte n[5] = { B00011111, B00000011, B00001110, B00011000, B00011111 };
-byte o[5] = { B00011111, B00010001, B00010001, B00010001, B00011111 };
-byte p[5] = { B00011111, B00000101, B00000101, B00000101, B00000111 };
-byte q[5] = { B00000111, B00000101, B00000101, B00000101, B00011111 };
-byte r[5] = { B00011111, B00000101, B00001101, B00010111, B00010000 };
-byte s[5] = { B00010111, B00010101, B00010101, B00010101, B00011101 };
-byte t[5] = { B00000001, B00000001, B00011111, B00000001, B00000001 };
-byte u[5] = { B00011111, B00010000, B00010000, B00010000, B00011111 };
-byte v[5] = { B00000011, B00011100, B00010000, B00011100, B00000011 };
-byte w[5] = { B00011111, B00001000, B00001100, B00001000, B00011111 };
-byte x[5] = { B00010001, B00001010, B00000100, B00001010, B00010001 };
-byte y[5] = { B00000111, B00000100, B00010100, B00010100, B00011111 };
-byte z[5] = { B00010001, B00001000, B00000100, B00000010, B00010001 };
+const byte a[5] = { B00011110, B00000101, B00000101, B00000101, B00011110 };
+const byte b[5] = { B00011111, B00010101, B00010101, B00010101, B00001010 };
+const byte c[5] = { B00001110, B00010001, B00010001, B00010001, B00010001 };
+const byte d[5] = { B00011111, B00010001, B00010001, B00010001, B00001110 };
+const byte e[5] = { B00011111, B00010101, B00010101, B00010101, B00010001 };
+const byte f[5] = { B00011111, B00000101, B00000101, B00000101, B00000001 };
+const byte g[5] = { B00001110, B00010001, B00010001, B00010101, B00011101 };
+const byte h[5] = { B00011111, B00000100, B00000100, B00000100, B00011111 };
+const byte i[5] = { B00000000, B00010001, B00011111, B00010001, B00000000 };
+const byte j[5] = { B00001000, B00010000, B00010001, B00001111, B00000001 };
+const byte k[5] = { B00011111, B00000100, B00001010, B00011011, B00010001 };
+const byte l[5] = { B00011111, B00010000, B00010000, B00010000, B00010000 };
+const byte m[5] = { B00011111, B00000010, B00000100, B00000010, B00011111 };
+const byte n[5] = { B00011111, B00000010, B00001100, B00010000, B00011111 };
+const byte o[5] = { B00001110, B00010001, B00010001, B00010001, B00001110 };
+const byte p[5] = { B00011111, B00000101, B00000101, B00000101, B00000111 };
+const byte q[5] = { B00001110, B00010001, B00010101, B00011001, B00011110 };
+const byte r[5] = { B00011111, B00000101, B00001101, B00010101, B00010111 };
+const byte s[5] = { B00010011, B00010101, B00010101, B00010101, B00011001 };
+const byte t[5] = { B00000001, B00000001, B00011111, B00000001, B00000001 };
+const byte u[5] = { B00011111, B00010000, B00010000, B00010000, B00011111 };
+const byte v[5] = { B00000011, B00001100, B00010000, B00001100, B00000011 };
+const byte w[5] = { B00011111, B00010000, B00001100, B00010000, B00011111 };
+const byte x[5] = { B00010001, B00001010, B00000100, B00001010, B00010001 };
+const byte y[5] = { B00000001, B00000010, B00011100, B00000010, B00000001 };
+const byte z[5] = { B00010001, B00001000, B00000100, B00000010, B00010001 };
 
-const byte* alph[26] = { a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z };
+const byte space[5] = {B00000000, B00000000, B00000000, B00000000, B00000000}; //26
+const byte plain[5] = {B11111111, B11111111, B11111111, B11111111, B11111111}; //27
+const byte grid[5] = {B10101010, B01010101, B10101010, B01010101, B10101010}; //28
 
-byte erasor[5] = {
-  B11111111, B11111111, B11111111, B11111111, B11111111
-};
-byte grid[5] = {
-  B10101010, B01010101, B10101010, B01010101, B10101010
-};
+const byte dot[5] = {B00000000, B00011000, B00011000, B0000000, B00000000}; //46 (but real dot is:)
+const byte tiret[5] = {B00000000, B00000100, B00000100, B00000100, B00000000}; //45
+const byte apos[5] = {B00000000, B00000100, B00000011, B00000000, B00000000}; //39
 
-const byte* spec[2] = {
-  erasor, grid
-};
+const byte* alph[32] = { a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, space, plain, grid, dot, tiret, apos };
+
 ///////////////////////////////////////////////////
+#define DBG 0
+#define MEM 1
+#define KEY 2
+char* modeStr[3] = {"DBG","MEM","KEY"};
+int mode = 0;
 boolean config = true;
-char sentenceHard[] = "ab";
-char sentenceSet[99];
+
+// live typed keyboard sentence
+char sentenceSet[150];
 int charP = 0;
 
-// the setup routine runs once when you press reset:
+// debug pattern
+byte digits = B11111111;
+int debugstyle = 0;
+boolean debugstyleset = false;
+
+
+///////////////////////////////////////////////////
 void setup() {
   Serial.begin(9600);
+  
   // PRINTER
   pinMode(DOT0, OUTPUT);
   pinMode(DOT1, OUTPUT);
   pinMode(DOT2, OUTPUT);
   pinMode(DOT3, OUTPUT);
   pinMode(DOT4, OUTPUT);
-  digitalWrite(DOT0, LOW);
-  digitalWrite(DOT1, LOW);
-  digitalWrite(DOT2, LOW);
-  digitalWrite(DOT3, LOW);
-  digitalWrite(DOT4, LOW);
-
+  
+  closeVannes();
+  
   // TRIGGER
   pinMode(TRIGGER, INPUT);
 
@@ -99,20 +116,44 @@ void setup() {
   // LCD
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
-  lcd.print("Against bush !");
+  lcd.print("Ag. bush.");
 
-  Serial.println("Ok. I'm ready Bush");
+  //Serial.println("Ok. I'm ready Bush");
   delay(100);
-
-  //startPrinting(sentence);
 }
 
+///////////////////////////////////////////////////
 void loop() {
+  delay(5);
 
-  delay(1);
+  ////////// LCD feedback !
+  lcd.setCursor(13,0);
+  lcd.print(modeStr[mode]);
+
+  if(config) lcd.print("?");
+
+  ////////// simple motifs to test !
+  if(mode==DBG) {
+    if(shouldgo()) {
+      //Serial.println("GOTEST");
+      lcd.setCursor(0,1);
+
+      printVerticalPixels(digits);
+
+      debugstyleset = false;
+    } else {
+      closeVannes();
+      if(!debugstyleset) {
+        debugstyle = debugstyle+1;
+        // set to next pattern ?
+        //setDigit()
+      }
+      debugstyleset = true;
+    }
+    
+  }
   
-
-  //// keyboard char receive loop
+  ////////// keyboard char receive loop
   if (keyboard.available()) {
     // read the next key
     char c = keyboard.read();
@@ -120,63 +161,116 @@ void loop() {
   }
 }
 
+// Set debug pattern
+void setDigit(int dig) {
+  if(dig==0) 
+    digits = B00000000;
+  else {
+    if(dig<6)
+      digits = digits ^ (1 << (dig-1)); // toggle the digit // (1 << (dig-1)); 
+    if(dig==6)
+      digits = B00010101;
+    if(dig==7)
+      digits = B00000100;
+    if(dig==8)
+      digits = B00010001;
+    if(dig==9)
+      digits = B00011111;
+  }
+  Serial.println(digits,BIN);
+};
+
+// trigger(s) to start/pause
 boolean shouldgo() {
   return (digitalRead(TRIGGER) == LOW);
 }
+boolean sleepIfNotGo() {
+  while(!shouldgo()) {
+    closeVannes();
+    delay(10);
+  }
+}
 
+// Keyboard setting sentence
 void addCharToMemory(char ch) {
   sentenceSet[charP] = ch;
   charP += 1;
-  Serial.println(sentenceSet);
+  //Serial.println(sentenceSet);
   lcd.setCursor(0, 1);
   lcd.print(sentenceSet);
 }
+
+// Global Keyboard receive
 void receiveChar(char ch) {
-  //Serial.println(ch);
 
   int charint = (int)ch;
-  if (charint >= 97 && charint <= 122) { // ALPHABET !!
-    if (config) addCharToMemory(ch);
+  Serial.println(charint);
+  if (charint >= 48 && charint <= 57) { // DIGITS !!
+    int digit = charint - 48;
+    if (mode==DBG) setDigit(digit);
   }
-  if (charint == 32) { // SPACE
-    if (config) addCharToMemory(ch);
+  if (charint >= 97 && charint <= 122) { // ALPHABET !!
+    if (mode==KEY && config) addCharToMemory(ch);
+  }
+  if (charint==46 || charint==45 || charint==39 || charint==32) { // specials: space, tiret, apos...
+    if (mode==KEY && config) addCharToMemory(ch);
   }
   if (ch == PS2_TAB) { // TAB
     // ?
   }
+  if (charint == 42) { // "*" 
+    mode = (mode+1) % 3;
+    config = mode==KEY;
+    choosen = 0;
+  }
   if (ch == PS2_BACKSPACE) { // ERASOR
+    choosen = 0;
+    mode = KEY;
     closeVannes();
     lcd.clear();
     config = true;
     memset(sentenceSet, 0, sizeof(sentenceSet));
     charP = 0;
   }
+  if (ch==43 || ch==45) { // + / -
+    if(mode==MEM) {
+      choosen += (ch==43) ? 1 : -1;
+      choosen = choosen % nSentences;
+      if(choosen<0) choosen = nSentences-1;
+      Serial.print("Choosen sentence i:");
+      Serial.println(choosen);
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print(sentenceHard[choosen]);
+      Serial.println(sentenceHard[choosen]);
+    }
+  }
   if (ch == PS2_ENTER) { // NEWLINE || ch==PS2_DOWNARROW
-    lcd.clear();
-    Serial.println("GO PRINT !");
+    //Serial.println("GO PRINT !");
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("ETAT d'URGENCE");
-    lcd.setCursor(0, 1);
-    lcd.print(sentenceSet);
     config = false;
-    startPrinting(sentenceSet, charP);
+    if(mode==KEY)
+      startPrinting(sentenceSet, charP);
+    if(mode==MEM)
+      startPrinting(sentenceHard[choosen], false);
     charP = 0;
   }
 }
 
 void startPrinting(char* sent, int l) {
 
-  int len = strlen(sent) - 1;
+  int len = strlen(sent);
   if (l)
-    len = l + 1;
+    len = l;
 
-  Serial.print("print: ");
-  Serial.println(sent);
-  Serial.print("size is: ");
-  Serial.println(l);
+  //Serial.print("print: ");
+  //Serial.println(sent);
+  //Serial.print("size is: ");
+  //Serial.println(len);
 
-  for (int i = 0; i < l; i = i + 1) {
+  for (int i = 0; i < len; i = i + 1) {
     printLetter(sent[i]);
     waitLetter();
   }
@@ -186,7 +280,7 @@ void startPrinting(char* sent, int l) {
 
 void closeVannes() {
   for (int dot = 0; dot < 5; dot = dot + 1) {
-    digitalWrite(PRINTPIN[dot], LOW);
+    analogWrite(PRINTPIN[dot], 0);
   }
 }
 
@@ -196,45 +290,65 @@ void lcdPrint(String str) {
   lcd.print(str);
 }
 void waitLine() { // between lines
-  delay(500);
+  delay(WAITDOT);
 }
 void waitLetter() { // between letters
-  delay(2000);
+  delay(WAITLETTER);
 }
 void printLetter(char c) {
   Serial.print("print letter: ");
   Serial.println(c);
+
   int w = (int)c - 97;
+
+  //Serial.println("Char index:");
+  //Serial.println(w);
+  
+  if((int)c==32) w = 26; //space
+  if((int)c==46) w = 29; //dot
+  if((int)c==45) w = 30; //tiret
+  if((int)c==39) w = 31; //apos
+  
+  
   //Serial.println(w);
   const byte *charlist = alph[w];
-
-  // for each line
+  lcd.setCursor(0,1);
+  lcd.print(String(c));
+  
+  // for each vertical line of pixels
   for (int vert = 0; vert < 5; vert = vert + 1) {
-    lcdPrint((String)vert);
+
+    //lcd.setCursor(15,0);
+    lcd.setCursor(2,1);
+    lcd.print(String(vert));
+    lcd.print(" ");
+
+    // if not triggerred, while-wait-sleep !
+    sleepIfNotGo();
+      
     if (!config) {
-      // for each dot
-      Serial.println("vertically");
-      for (int dot = 0; dot < 5; dot = dot + 1) {
-        //charint is from keyboard
-        //boolean on = alph[charint-97];
-        boolean on = charlist[vert] & (1 << dot);
-        Serial.println(on ? "X" : "O");
-        if (on) {
-          //if(shouldgo())
-          digitalWrite(PRINTPIN[dot], HIGH);
-        }
-        else
-          digitalWrite(PRINTPIN[dot], LOW);
-      }
+      printVerticalPixels( charlist[vert] );
       waitLine();
     }
   }
-  // at the end of the letter close all ? maybe not
+  // at the end of the letter close all ? maybe not ?
   closeVannes();
 }
 
-
-
+void printVerticalPixels(byte motif) {
+  // for each dot
+  for (int pix = 0; pix < 5; pix = pix + 1) {
+    boolean on = motif & (1 << pix);
+    //Serial.println(on ? "X" : "O");
+    if(on>0) {
+      analogWrite(PRINTPIN[pix], 255);
+      lcd.print("X");
+    } else {
+      analogWrite(PRINTPIN[pix], 0);
+      lcd.print("_");
+    }
+  }
+}
 
 
 
